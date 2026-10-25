@@ -1,10 +1,10 @@
 # Pomo
 
-A quiet Pomodoro timer for Claude Code. Start a focus block with `/pomo`, keep working, and a subtle band above the prompt shows the time left and your rounds. When a block ends you get a small toast, a break idea, and a tomato for the day.
+A Pomodoro timer for Claude Code. Start a focus block with `/pomo start`, keep working, and a subtle band above the prompt shows the time left and your rounds. When a block ends you get a small toast, a break idea, and a tomato for the day.
 
 ```
 ╭──────────────────────────────────────────────────────────────────────────────╮
-│ 🧠 fix login bug  ███████████████████████▌░░░░░░░░░░░░░░░░░░  12:30  ● ◐ ○ ○ │
+│ 🧠 fix login bug   ████████████████████▌░░░░░░░░░░░░░░░░░░░░  12:30  ● ◐ ○ ○ │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -27,6 +27,91 @@ claude plugin install pomo --marketplace hassanhafezzz/pomo
 ```
 
 In the desktop app, where `/plugin` does not run: click **+** next to the prompt box, then **Plugins**, **Add marketplace** with `hassanhafezzz/pomo`, then **Add plugin**.
+
+## What it looks like
+
+A focus block, halfway through. The round dots show it's the second of four:
+
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ 🧠 fix login bug   ████████████████████▌░░░░░░░░░░░░░░░░░░░░  12:30  ● ◐ ○ ○ │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+Paused, with the clock frozen:
+
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ ⏸ fix login bug   ██████████████████████████▉░░░░░░░░░░░░░░░  09:00  ● ◐ ○ ○ │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+The block is done. The band keeps the next step first, then the day's tomatoes and a break idea:
+
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ 🔔 fix login bug done   ████████████████████████████████████  ● ● ○ ○        │
+│ today 🍅🍅🍅  ·  /pomo break for 5 min  ·  Stand up and stretch.             │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+On a break, with the idea underneath:
+
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ ☕ short break  ██████████████▋░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  03:20  ● ● ○ ○ │
+│ Stand up and stretch.                                                        │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+The break is over, and the next round is waiting:
+
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ 🔔 break over   ████████████████████████████████████████████  ● ● ○ ○        │
+│ today 🍅🍅🍅  ·  /pomo start for round 3                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+After the fourth round, the break is a long one:
+
+```
+╭──────────────────────────────────────────────────────────────────────────────╮
+│ 🛌 long break   ██████████████▋░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  10:00  ● ● ● ● │
+│ It's time for a short walk.                                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+```
+
+When a block ends, a short toast says what finished and what to do next:
+
+```
+🔔 fix login bug done · /pomo break for 5 min
+```
+
+### In the chat
+
+```
+/pomo start 25 fix login bug
+🧠 focus started: 25 min · fix login bug
+
+/pomo pause
+⏸ Paused the focus with 09:00 left. /pomo resume to carry on.
+
+/pomo strat
+Unknown: /pomo strat. Did you mean /pomo start?
+
+/pomo stats
+📊 Focus
+Today:        3 🍅 · 1h 15m focused
+This week:   11 🍅 · 4h 35m focused
+This month:  38 🍅 · 15h 50m focused
+This year:  212 🍅 · 88h 20m focused
+All time:   212 🍅 · 88h 20m focused
+
+🎯 Today's tasks
+  fix login bug · 2 🍅 · 50 min
+  write the docs · 1 🍅 · 25 min
+```
 
 ## Use it
 
