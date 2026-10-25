@@ -1,12 +1,12 @@
 {
   "name": "pomo",
   "owner": { "name": "hassanhafezzz" },
-  "metadata": { "description": "pomo, a quiet pomodoro timer mod for Claude Code" },
+  "metadata": { "description": "Pomodoro focus blocks right above your Claude Code prompt: a quiet progress band, break ideas and daily stats, all from /pomo." },
   "plugins": [
     {
       "name": "pomo",
       "source": "./",
-      "description": "A quiet pomodoro timer above the prompt, driven by /pomo"
+      "description": "Pomodoro focus blocks right above your Claude Code prompt: a quiet progress band, break ideas and daily stats, all from /pomo."
     }
   ]
 }

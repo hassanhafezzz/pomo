@@ -1,7 +1,7 @@
 {
   "name": "pomo",
   "version": "0.1.0",
-  "description": "A quiet pomodoro timer above the prompt, driven by /pomo",
+  "description": "Pomodoro focus blocks right above your Claude Code prompt: a quiet progress band, break ideas and daily stats, all from /pomo.",
   "author": { "name": "hassanhafezzz" },
   "license": "MIT",
   "homepage": "https://github.com/hassanhafezzz/pomo",
