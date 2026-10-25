@@ -1,4 +1,4 @@
-# pomo
+# Pomo
 
 A quiet Pomodoro timer for Claude Code. Start a focus block with `/pomo`, keep working, and a subtle band above the prompt shows the time left and your rounds. When a block ends you get a small toast, a break idea, and a tomato for the day.
 
