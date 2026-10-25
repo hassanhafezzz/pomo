@@ -1,3 +1,5 @@
+<img src=".claude-plugin/icon.png" alt="Pomo icon: a hand-drawn tomato" width="96">
+
 # Pomo
 
 A Pomodoro timer for Claude Code. Start a focus block with `/pomo start`, keep working, and a subtle band above the prompt shows the time left and your rounds. When a block ends you get a small toast, a break idea, and a tomato for the day.
