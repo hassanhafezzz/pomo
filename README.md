@@ -2,7 +2,9 @@
 
 # Tamatem
 
-Tamatem (طماطم, Arabic for tomatoes) is a Pomodoro timer for Claude Code. Start a focus block with `/tamatem start`, keep working, and a subtle band above the prompt shows the time left and your rounds. When a block ends you get a small toast, a break idea, and a tomato for the day.
+Tamatem (طماطم, Arabic for tomatoes) is a Pomodoro mod for Claude Code.
+
+Run `/tamatem start` and get to work. Tamatem tracks every focus block, shows what you shipped, and tells you when it's time for a break.
 
 ```
 ╭──────────────────────────────────────────────────────────────────────────────╮
