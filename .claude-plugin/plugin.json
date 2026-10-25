@@ -1,0 +1,11 @@
+{
+  "name": "pomo",
+  "version": "0.1.0",
+  "description": "A quiet pomodoro timer above the prompt, driven by /pomo",
+  "author": { "name": "hassanhafezzz" },
+  "license": "MIT",
+  "homepage": "https://github.com/hassanhafezzz/pomo",
+  "repository": "https://github.com/hassanhafezzz/pomo",
+  "keywords": ["pomodoro", "timer", "focus", "productivity"],
+  "types": "./types/index.d.ts"
+}
