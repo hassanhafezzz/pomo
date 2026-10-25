@@ -1,11 +1,11 @@
 {
-  "name": "pomo",
+  "name": "tamatem",
   "version": "0.1.0",
-  "description": "Pomodoro focus blocks right above your Claude Code prompt: a quiet progress band, break ideas and daily stats, all from /pomo.",
+  "description": "Pomodoro focus blocks right above your Claude Code prompt: a quiet progress band, break ideas and daily stats, all from /tamatem.",
   "author": { "name": "hassanhafezzz" },
   "license": "MIT",
-  "homepage": "https://github.com/hassanhafezzz/pomo",
-  "repository": "https://github.com/hassanhafezzz/pomo",
+  "homepage": "https://github.com/hassanhafezzz/tamatem",
+  "repository": "https://github.com/hassanhafezzz/tamatem",
   "keywords": ["pomodoro", "timer", "focus", "productivity"],
   "types": "./types/index.d.ts"
 }

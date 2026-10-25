@@ -15,7 +15,7 @@ const engine = (on: On, stored: Record<string, unknown>, toasts: string[] = [], 
 
     return { value: undefined }
   })
-  on('command.register', () => ({ value: { command: 'pomo' } }))
+  on('command.register', () => ({ value: { command: 'tamatem' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('store.get', (_, e) => ({ value: stored[e.key] }))
   on('store.set', (_, e) => {
@@ -47,7 +47,7 @@ const start = ($: Parameters<Parameters<typeof test>[1]>[0]) =>
 
 test('a running block resumes on the band', async ($, on) => {
   const views = engine(on, {
-    pomo: { next: 'focus', cycle: 1, running: { phase: 'focus', endsAt: NOW + 1_000_000, minutes: 25 } },
+    timer: { next: 'focus', cycle: 1, running: { phase: 'focus', endsAt: NOW + 1_000_000, minutes: 25 } },
   })
   await start($)
 
@@ -58,7 +58,7 @@ test("a finished block shows today's count on the band", async ($, on) => {
   const today = new Date(NOW)
   const day = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   const views = engine(on, {
-    pomo: { next: 'break', cycle: 2, tip: "Grab some water.", endedAt: NOW - 60_000 },
+    timer: { next: 'break', cycle: 2, tip: "Grab some water.", endedAt: NOW - 60_000 },
     history: { days: { [day]: { blocks: 3, minutes: 75 } } },
   })
   await start($)
@@ -67,14 +67,14 @@ test("a finished block shows today's count on the band", async ($, on) => {
 })
 
 test('nothing running clears the band', async ($, on) => {
-  const views = engine(on, { pomo: { next: 'focus', cycle: 0 } })
+  const views = engine(on, { timer: { next: 'focus', cycle: 0 } })
   await start($)
 
   expect(views.at(-1)).toBeNull()
 })
 
 const run = ($: Parameters<Parameters<typeof test>[1]>[0], args: string) =>
-  $.command.run({ command: 'pomo', args })
+  $.command.run({ command: 'tamatem', args })
 
 test('start refuses minutes out of bounds or not whole', async ($, on) => {
   const stored: Record<string, unknown> = {}
@@ -83,20 +83,20 @@ test('start refuses minutes out of bounds or not whole', async ($, on) => {
   for (const args of ['start 0', 'start 181', 'start 0.5', 'start 1e305', 'start -3', 'start 200 fix login']) {
     expect((await run($, args)).text).toContain('whole minutes from 1 to 180')
   }
-  expect(stored.pomo).toBeUndefined()
+  expect(stored.timer).toBeUndefined()
 
   expect((await run($, 'start 180')).text).toBe('🧠 focus started: 180 min.')
 })
 
 test('a break is bounded by its own length', async ($, on) => {
-  engine(on, { pomo: { next: 'break', cycle: 4 } })
+  engine(on, { timer: { next: 'break', cycle: 4 } })
 
   expect((await run($, 'break 121')).text).toContain('A long break takes whole minutes from 1 to 120')
 })
 
 test('a store written badly falls back instead of breaking', async ($, on) => {
   const views = engine(on, {
-    pomo: { next: 'focus', cycle: 1, running: { phase: 'focus', endsAt: null, minutes: 1e305 } },
+    timer: { next: 'focus', cycle: 1, running: { phase: 'focus', endsAt: null, minutes: 1e305 } },
     settings: { focus: -1, rounds: 1e9, sound: 'yes', notify: true },
   })
   await start($)
@@ -125,22 +125,22 @@ test('history that could not be real is dropped from the stats', async ($, on) =
 
 test('pause keeps the time left, and resume carries on from it', async ($, on) => {
   const stored: Record<string, unknown> = {
-    pomo: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW + 600_000, minutes: 25 } },
+    timer: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW + 600_000, minutes: 25 } },
   }
   const views = engine(on, stored)
 
-  expect((await run($, 'pause')).text).toBe('⏸ Paused the focus with 10:00 left. /pomo resume to carry on.')
+  expect((await run($, 'pause')).text).toBe('⏸ Paused the focus with 10:00 left. /tamatem resume to carry on.')
   expect(views.at(-1)).toEqual({ phase: 'focus', leftMs: 600_000, totalMs: 1_500_000, cycle: 0, rounds: 4, isPaused: true })
-  expect((await run($, '')).text).toContain('focus: 10:00 left (paused, /pomo resume)')
+  expect((await run($, '')).text).toContain('focus: 10:00 left (paused, /tamatem resume)')
 
   expect((await run($, 'resume')).text).toBe('▶ Resumed the focus: 10:00 left.')
-  expect((stored.pomo as { running: unknown }).running).toEqual({ phase: 'focus', endsAt: NOW + 600_000, minutes: 25 })
+  expect((stored.timer as { running: unknown }).running).toEqual({ phase: 'focus', endsAt: NOW + 600_000, minutes: 25 })
   expect((await run($, 'resume')).text).toBe("The focus isn't paused.")
 })
 
 test('pause again resumes, and a paused block survives a restart', async ($, on) => {
   const stored: Record<string, unknown> = {
-    pomo: { next: 'focus', cycle: 0, running: { phase: 'short', endsAt: NOW - 1, minutes: 5, pausedLeftMs: 120_000 } },
+    timer: { next: 'focus', cycle: 0, running: { phase: 'short', endsAt: NOW - 1, minutes: 5, pausedLeftMs: 120_000 } },
   }
   const views = engine(on, stored)
   await start($)
@@ -169,7 +169,7 @@ test('start names a task, with or without minutes, as typed', async ($, on) => {
   const views = engine(on, stored)
 
   expect((await run($, 'start Fix Login bug')).text).toBe('🧠 focus started: 25 min · Fix Login bug')
-  expect((stored.pomo as Running).running).toMatchObject({ minutes: 25, task: 'Fix Login bug' })
+  expect((stored.timer as Running).running).toMatchObject({ minutes: 25, task: 'Fix Login bug' })
   expect(views.at(-1)).toMatchObject({ phase: 'focus', task: 'Fix Login bug' })
 
   expect((await run($, 'start 50 Write the README')).text).toBe('Stopped the focus. 🧠 focus started: 50 min · Write the README')
@@ -182,16 +182,16 @@ test('a task name loses control characters and is cut to 60', async ($, on) => {
   engine(on, stored)
 
   await run($, 'start red\u001b[31mtext')
-  expect((stored.pomo as Running).running.task).toBe('red [31mtext')
+  expect((stored.timer as Running).running.task).toBe('red [31mtext')
 
   await run($, `start ${'a'.repeat(80)}`)
-  expect((stored.pomo as Running).running.task).toBe(`${'a'.repeat(59)}…`)
+  expect((stored.timer as Running).running.task).toBe(`${'a'.repeat(59)}…`)
 })
 
 test('a named block counts under its task, and today lists it', async ($, on) => {
   const today = dayOf(NOW)
   const stored: Record<string, unknown> = {
-    pomo: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25, task: 'Fix login' } },
+    timer: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25, task: 'Fix login' } },
     history: { days: { [today]: { blocks: 1, minutes: 25, tasks: { 'Fix login': { blocks: 1, minutes: 25 } } } } },
   }
   const toasts: string[] = []
@@ -201,14 +201,14 @@ test('a named block counts under its task, and today lists it', async ($, on) =>
   expect(stored.history).toEqual({
     days: { [today]: { blocks: 2, minutes: 50, tasks: { 'Fix login': { blocks: 2, minutes: 50 } } } },
   })
-  expect(toasts.at(-1)).toBe('🔔 Fix login done while you were away · /pomo break for 5 min')
+  expect(toasts.at(-1)).toBe('🔔 Fix login done while you were away · /tamatem break for 5 min')
   expect(views.at(-1)).toMatchObject({ phase: 'done', task: 'Fix login', today: 2 })
   expect((await run($, 'stats')).text).toContain("🎯 Today's tasks\n  Fix login · 2 🍅 · 50 min")
 })
 
 test('days over a year old fold into all time, without their names', async ($, on) => {
   const stored: Record<string, unknown> = {
-    pomo: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25 } },
+    timer: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25 } },
     history: {
       days: { '1999-01-01': { blocks: 3, minutes: 75, tasks: { Old: { blocks: 3, minutes: 75 } } } },
       earlier: { blocks: 1, minutes: 10 },
@@ -226,29 +226,29 @@ test('days over a year old fold into all time, without their names', async ($, o
 
 test('skipped breaks stop at the last round, and the long break is due', async ($, on) => {
   const stored: Record<string, unknown> = {
-    pomo: { next: 'break', cycle: 4, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25 } },
+    timer: { next: 'break', cycle: 4, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25 } },
   }
   engine(on, stored)
   await start($)
 
-  expect((stored.pomo as { cycle: number }).cycle).toBe(4)
-  expect((await run($, '')).text).toContain('Focus block done (4/4). /pomo break for a long break.')
+  expect((stored.timer as { cycle: number }).cycle).toBe(4)
+  expect((await run($, '')).text).toContain('Focus block done (4/4). /tamatem break for a long break.')
 })
 
 test('a count that cannot be saved still ends the block, and says so', async ($, on) => {
   const stored: Record<string, unknown> = {
-    pomo: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25 } },
+    timer: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25 } },
   }
   const toasts: string[] = []
   engine(on, stored, toasts, 'history')
   await start($)
 
-  expect(stored.pomo).toMatchObject({ next: 'break', cycle: 1 })
-  expect(toasts.at(-1)).toBe("🔔 Focus done while you were away · /pomo break for 5 min · stats couldn't be saved")
+  expect(stored.timer).toMatchObject({ next: 'break', cycle: 1 })
+  expect(toasts.at(-1)).toBe("🔔 Focus done while you were away · /tamatem break for 5 min · stats couldn't be saved")
 })
 
 test('a block that ended yesterday leaves the band clear', async ($, on) => {
-  const views = engine(on, { pomo: { next: 'break', cycle: 1, endedAt: NOW - 86_400_000 } })
+  const views = engine(on, { timer: { next: 'break', cycle: 1, endedAt: NOW - 86_400_000 } })
   await start($)
 
   expect(views.at(-1)).toBeNull()
@@ -256,44 +256,44 @@ test('a block that ended yesterday leaves the band clear', async ($, on) => {
 
 test('a break that ends shows the band until the next start', async ($, on) => {
   const stored: Record<string, unknown> = {
-    pomo: { next: 'break', cycle: 1, running: { phase: 'short', endsAt: NOW - 1, minutes: 5 } },
+    timer: { next: 'break', cycle: 1, running: { phase: 'short', endsAt: NOW - 1, minutes: 5 } },
   }
   const toasts: string[] = []
   const views = engine(on, stored, toasts)
   await start($)
 
   expect(views.at(-1)).toEqual({ phase: 'over', cycle: 1, rounds: 4, today: 0 })
-  expect(toasts.at(-1)).toBe('🔔 Break over while you were away · /pomo start for round 2')
+  expect(toasts.at(-1)).toBe('🔔 Break over while you were away · /tamatem start for round 2')
 })
 
 test('stop with nothing running clears what the band still shows', async ($, on) => {
-  const stored: Record<string, unknown> = { pomo: { next: 'break', cycle: 1, endedAt: NOW - 60_000 } }
+  const stored: Record<string, unknown> = { timer: { next: 'break', cycle: 1, endedAt: NOW - 60_000 } }
   const views = engine(on, stored)
 
-  expect((await run($, 'stop')).text).toBe('Cleared the band. /pomo start when you are ready.')
+  expect((await run($, 'stop')).text).toBe('Cleared the band. /tamatem start when you are ready.')
   expect(views.at(-1)).toBeNull()
-  expect(stored.pomo).toEqual({ next: 'break', cycle: 1 })
+  expect(stored.timer).toEqual({ next: 'break', cycle: 1 })
   expect((await run($, 'stop')).text).toBe('No timer running.')
 })
 
-test('bare /pomo stays short, and help lists every command', async ($, on) => {
+test('bare /tamatem stays short, and help lists every command', async ($, on) => {
   engine(on, {})
   const where = (await run($, '')).text
 
-  expect(where).toContain('No timer running. /pomo start [min] [task] to begin.')
-  expect(where).toContain('/pomo help for every command.')
-  expect(where).not.toContain('/pomo set reset')
-  expect((await run($, 'help')).text).toContain('/pomo set reset')
+  expect(where).toContain('No timer running. /tamatem start [min] [task] to begin.')
+  expect(where).toContain('/tamatem help for every command.')
+  expect(where).not.toContain('/tamatem set reset')
+  expect((await run($, 'help')).text).toContain('/tamatem set reset')
   expect((await run($, 'help')).text).toContain('● ◐ ○ count rounds')
 })
 
 test('a long task is cut in the toast', async ($, on) => {
   const task = 'fixing dsajsam pojsad apjsadmp jaspomdsa asdpmoa sd'
   const toasts: string[] = []
-  engine(on, { pomo: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25, task } } }, toasts)
+  engine(on, { timer: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW - 1, minutes: 25, task } } }, toasts)
   await start($)
 
-  expect(toasts.at(-1)).toBe('🔔 fixing dsajsam pojsad apjsa… done while you were away · /pomo break for 5 min')
+  expect(toasts.at(-1)).toBe('🔔 fixing dsajsam pojsad apjsa… done while you were away · /tamatem break for 5 min')
 })
 
 test('history is stats by another name', async ($, on) => {
@@ -305,37 +305,37 @@ test('history is stats by another name', async ($, on) => {
 test('a typo gets a suggestion, gibberish the full list', async ($, on) => {
   engine(on, {})
 
-  expect((await run($, 'state')).text).toBe('Unknown: /pomo state. Did you mean /pomo stats?')
-  expect((await run($, 'strat')).text).toBe('Unknown: /pomo strat. Did you mean /pomo start?')
-  expect((await run($, 'puase')).text).toBe('Unknown: /pomo puase. Did you mean /pomo pause?')
-  expect((await run($, 'stp')).text).toBe('Unknown: /pomo stp. Did you mean /pomo stop?')
-  expect((await run($, 'stat')).text).toBe('Unknown: /pomo stat. Did you mean /pomo start or /pomo stats?')
-  expect((await run($, 'xyzzy')).text).toContain('Unknown: /pomo xyzzy\n\n/pomo start')
+  expect((await run($, 'state')).text).toBe('Unknown: /tamatem state. Did you mean /tamatem stats?')
+  expect((await run($, 'strat')).text).toBe('Unknown: /tamatem strat. Did you mean /tamatem start?')
+  expect((await run($, 'puase')).text).toBe('Unknown: /tamatem puase. Did you mean /tamatem pause?')
+  expect((await run($, 'stp')).text).toBe('Unknown: /tamatem stp. Did you mean /tamatem stop?')
+  expect((await run($, 'stat')).text).toBe('Unknown: /tamatem stat. Did you mean /tamatem start or /tamatem stats?')
+  expect((await run($, 'xyzzy')).text).toContain('Unknown: /tamatem xyzzy\n\n/tamatem start')
 })
 
 test('stats reset asks first, then clears every count', async ($, on) => {
   const today = dayOf(NOW)
   const stored: Record<string, unknown> = {
-    pomo: { next: 'break', cycle: 2, endedAt: NOW - 60_000 },
+    timer: { next: 'break', cycle: 2, endedAt: NOW - 60_000 },
     history: { days: { [today]: { blocks: 2, minutes: 50, tasks: { 'Fix login': { blocks: 2, minutes: 50 } } } }, earlier: { blocks: 3, minutes: 75 } },
   }
   const views = engine(on, stored)
 
   expect((await run($, 'stats reset')).text).toBe(
     "This deletes all 5 🍅 (2h 5m focused) and today's tasks, for good. The timer and settings stay.\n" +
-      '/pomo stats reset confirm to go ahead.',
+      '/tamatem stats reset confirm to go ahead.',
   )
   expect(stored.history).toMatchObject({ earlier: { blocks: 3 } })
 
   expect((await run($, 'history reset confirm')).text).toBe('Stats reset. A fresh start.')
   expect(stored.history).toBeUndefined()
-  expect(stored.pomo).toMatchObject({ cycle: 2 })
+  expect(stored.timer).toMatchObject({ cycle: 2 })
   expect(views.at(-1)).toMatchObject({ phase: 'done', today: 0 })
   expect((await run($, 'stats reset')).text).toBe('No stats to reset.')
 })
 
 test('starting over a running block says it stopped it', async ($, on) => {
-  engine(on, { pomo: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW + 600_000, minutes: 25 } } })
+  engine(on, { timer: { next: 'focus', cycle: 0, running: { phase: 'focus', endsAt: NOW + 600_000, minutes: 25 } } })
 
   expect((await run($, 'start 10 docs')).text).toBe('Stopped the focus. 🧠 focus started: 10 min · docs')
 })

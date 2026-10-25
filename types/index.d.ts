@@ -9,6 +9,6 @@ export type View =
 
 declare module 'claude-code' {
   interface PluginState {
-    pomo: { view: Shaped<View | null> }
+    tamatem: { view: Shaped<View | null> }
   }
 }

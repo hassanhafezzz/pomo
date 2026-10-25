@@ -28,7 +28,7 @@ type History = { days: Record<string, Dated>; earlier?: Day }
 
 type Settings = Record<Phase, number> & { rounds: number; sound: boolean; toast: boolean }
 
-const KEY = 'pomo'
+const KEY = 'timer'
 const HISTORY_KEY = 'history'
 const SETTINGS_KEY = 'settings'
 const CHIME = 'sounds/chime.wav'
@@ -76,19 +76,19 @@ const TIPS: Record<'short' | 'long', string[]> = {
 }
 
 const HELP = [
-  '/pomo start [min] [task] start a focus block, named if you like',
-  '/pomo break [min]        start a break (long after every round)',
-  '/pomo pause              pause the current block, again to resume',
-  '/pomo resume             carry on a paused block',
-  '/pomo stop               stop the current block, or clear the band',
-  '/pomo stats              focus blocks today, this week, month, year, all time (or history)',
-  '/pomo stats reset        delete every count, after a confirm',
-  '/pomo set [name] [n]     show or change focus, short, long, rounds',
-  '/pomo set reset          back to 25/5/15, 4 rounds',
-  '/pomo sound on|off       chime when a block ends',
-  '/pomo toast on|off       pop-up when a block ends',
-  '/pomo                    show where you are',
-  '/pomo help               this list',
+  '/tamatem start [min] [task] start a focus block, named if you like',
+  '/tamatem break [min]        start a break (long after every round)',
+  '/tamatem pause              pause the current block, again to resume',
+  '/tamatem resume             carry on a paused block',
+  '/tamatem stop               stop the current block, or clear the band',
+  '/tamatem stats              focus blocks today, this week, month, year, all time (or history)',
+  '/tamatem stats reset        delete every count, after a confirm',
+  '/tamatem set [name] [n]     show or change focus, short, long, rounds',
+  '/tamatem set reset          back to 25/5/15, 4 rounds',
+  '/tamatem sound on|off       chime when a block ends',
+  '/tamatem toast on|off       pop-up when a block ends',
+  '/tamatem                    show where you are',
+  '/tamatem help               this list',
   '',
   'In the band, ● ◐ ○ count rounds: ● a focus block done, ◐ the one running,',
   '○ one to come. When all are ●, the long break is due.',
@@ -96,7 +96,7 @@ const HELP = [
 
 // What the band draws, rewritten every tick. Change the tag when View's
 // fields change: it declines what an earlier version stored.
-const view = atom({ plugin: 'pomo', key: 'view' } as const, null, { shape: 'view-5' })
+const view = atom({ plugin: 'tamatem', key: 'view' } as const, null, { shape: 'view-5' })
 
 // A hot reload cancels the old timer with the old module; session.start
 // runs again and starts a new one.
@@ -377,7 +377,7 @@ const paint = async ($: Engine, pomo: Pomo, settings: Settings, now: number) => 
     if (task) shown.task = task
   } else if (pomo.endedAt !== undefined) {
     // What just ended and what comes next, kept until the next block or a
-    // /pomo stop, and only the day it happened: tomorrow it's stale.
+    // /tamatem stop, and only the day it happened: tomorrow it's stale.
     const day = dayOf(await $.clock.now())
     if (dayOf(pomo.endedAt) === day) {
       const today = sumSince(await loadHistory($), day).blocks
@@ -399,7 +399,7 @@ const paint = async ($: Engine, pomo: Pomo, settings: Settings, now: number) => 
 }
 
 // The band's label: an icon and the task, or the phase. A task shows up to
-// MAX_LABEL characters; /pomo has it in full.
+// MAX_LABEL characters; /tamatem has it in full.
 const MAX_LABEL = 28
 const shorten = (text: string) =>
   text.length > MAX_LABEL ? `${text.slice(0, MAX_LABEL - 1).trimEnd()}…` : text
@@ -445,14 +445,14 @@ const finish = async ($: Engine, pomo: Pomo, isAway: boolean) => {
   await save($, done)
 
   const away = isAway ? ' while you were away' : ''
-  let message = `🔔 Break over${away} · /pomo start for round ${Math.min(cycle + 1, settings.rounds)}`
+  let message = `🔔 Break over${away} · /tamatem start for round ${Math.min(cycle + 1, settings.rounds)}`
   if (phase === 'focus') {
     const isCounted = await countBlock($, minutes, endsAt, task).then(
       () => true,
       () => false,
     )
     // What ended and the next step; the band has the rest.
-    message = `🔔 ${task ? shorten(task) : 'Focus'} done${away} · /pomo break for ${settings[kind]} min`
+    message = `🔔 ${task ? shorten(task) : 'Focus'} done${away} · /tamatem break for ${settings[kind]} min`
     if (!isCounted) message += " · stats couldn't be saved"
   }
   if (settings.toast) $.ui.toast(message, { timeoutMs: 8000 })
@@ -535,7 +535,7 @@ const pause = async ($: Engine) => {
   ticker = undefined
   await paint($, paused, settings, now)
 
-  return `⏸ Paused the ${LABEL[pomo.running.phase]} with ${clock(left)} left. /pomo resume to carry on.`
+  return `⏸ Paused the ${LABEL[pomo.running.phase]} with ${clock(left)} left. /tamatem resume to carry on.`
 }
 
 const resume = async ($: Engine) => {
@@ -558,7 +558,7 @@ const badMinutes = (verb: string, arg: string, phase: Phase, fallback: number) =
   const n = Number(arg)
   if (Number.isInteger(n) && n >= min && n <= max) return undefined
 
-  return `A ${LABEL[phase]} takes whole minutes from ${min} to ${max}, e.g. /pomo ${verb} ${fallback}`
+  return `A ${LABEL[phase]} takes whole minutes from ${min} to ${max}, e.g. /tamatem ${verb} ${fallback}`
 }
 
 const VERBS = ['start', 'break', 'pause', 'resume', 'stop', 'stats', 'history', 'set', 'sound', 'toast', 'status', 'help']
@@ -590,7 +590,7 @@ const closest = (typed: string) => {
   const near = VERBS.map(verb => ({ verb, d: distance(typed, verb) })).filter(({ d }) => d <= allowed)
   const best = Math.min(...near.map(({ d }) => d))
 
-  return near.filter(({ d }) => d === best).map(({ verb }) => `/pomo ${verb}`)
+  return near.filter(({ d }) => d === best).map(({ verb }) => `/tamatem ${verb}`)
 }
 
 // Deleting every count can't be undone, so the first ask only says what
@@ -606,7 +606,7 @@ const resetStats = async ($: Engine, settings: Settings, isConfirmed: boolean) =
   if (!isConfirmed) {
     return (
       `This deletes all ${blocks} 🍅 (${hours(minutes)} focused) and today's tasks, for good. ` +
-      'The timer and settings stay.\n/pomo stats reset confirm to go ahead.'
+      'The timer and settings stay.\n/tamatem stats reset confirm to go ahead.'
     )
   }
 
@@ -623,25 +623,25 @@ const describe = async ($: Engine) => {
   if (pomo.running) {
     const { endsAt, pausedLeftMs, task } = pomo.running
     const left = pausedLeftMs ?? endsAt - now
-    const paused = pausedLeftMs === undefined ? '' : ' (paused, /pomo resume)'
-    const on = task ? ` on ${task}` : ''
+    const paused = pausedLeftMs === undefined ? '' : ' (paused, /tamatem resume)'
+    const onTask = task ? ` on ${task}` : ''
 
-    return `${LABEL[pomo.running.phase]}${on}: ${clock(left)} left${paused} · round ${round(pomo, settings.rounds)}\n\n${stats}`
+    return `${LABEL[pomo.running.phase]}${onTask}: ${clock(left)} left${paused} · round ${round(pomo, settings.rounds)}\n\n${stats}`
   }
 
   const done = Math.min(pomo.cycle, settings.rounds)
   const kind = done >= settings.rounds ? 'long' : 'short'
   const where =
     pomo.next === 'break'
-      ? `Focus block done${pomo.task ? `: ${pomo.task}` : ''} (${done}/${settings.rounds}). /pomo break for a ${kind} break.`
-      : 'No timer running. /pomo start [min] [task] to begin.'
+      ? `Focus block done${pomo.task ? `: ${pomo.task}` : ''} (${done}/${settings.rounds}). /tamatem break for a ${kind} break.`
+      : 'No timer running. /tamatem start [min] [task] to begin.'
 
-  return `${where}\n\n${stats}\n\n/pomo help for every command.`
+  return `${where}\n\n${stats}\n\n/tamatem help for every command.`
 }
 
 const set = async ($: Engine, name = '', value = '') => {
   const settings = await loadSettings($)
-  if (name === '') return `${settingsText(settings)}\n\nChange one: /pomo set focus 30`
+  if (name === '') return `${settingsText(settings)}\n\nChange one: /tamatem set focus 30`
 
   if (name === 'reset') {
     // The alerts are their own switches; a reset of the durations keeps them.
@@ -658,7 +658,7 @@ const set = async ($: Engine, name = '', value = '') => {
   const [min, max] = LIMITS[name]
   const n = Number(value)
   if (!Number.isInteger(n) || n < min || n > max) {
-    return `${name} takes a whole number from ${min} to ${max}, e.g. /pomo set ${name} ${settings[name]}`
+    return `${name} takes a whole number from ${min} to ${max}, e.g. /tamatem set ${name} ${settings[name]}`
   }
 
   const changed = { ...settings, [name]: n }
@@ -671,7 +671,7 @@ const set = async ($: Engine, name = '', value = '') => {
 const toast = async ($: Engine, value = '') => {
   const settings = await loadSettings($)
   if (value !== 'on' && value !== 'off') {
-    return `Toast is ${settings.toast ? 'on' : 'off'}. /pomo toast on|off to change it.`
+    return `Toast is ${settings.toast ? 'on' : 'off'}. /tamatem toast on|off to change it.`
   }
 
   await $.store.set(SETTINGS_KEY, { ...settings, toast: value === 'on' })
@@ -684,7 +684,7 @@ const toast = async ($: Engine, value = '') => {
 const sound = async ($: Engine, value = '') => {
   const settings = await loadSettings($)
   if (value !== 'on' && value !== 'off') {
-    return `Sound is ${settings.sound ? 'on' : 'off'}. /pomo sound on|off to change it.`
+    return `Sound is ${settings.sound ? 'on' : 'off'}. /tamatem sound on|off to change it.`
   }
 
   await $.store.set(SETTINGS_KEY, { ...settings, sound: value === 'on' })
@@ -704,7 +704,7 @@ const sound = async ($: Engine, value = '') => {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
-      name: 'pomo',
+      name: 'tamatem',
       description: 'Pomodoro timer: start, break, pause, resume, stop, stats, set, sound, toast, help',
       argumentHint: '[start [min] [task]|break|pause|resume|stop|stats|set|sound|toast|help]',
       immediate: true,
@@ -724,7 +724,7 @@ export const register: Register = on => {
     return next(e)
   })
 
-  on('command.run', { command: 'pomo' }, ($, e) =>
+  on('command.run', { command: 'tamatem' }, ($, e) =>
     serial(async () => {
       // Lower case for the words pomo reads; a task name keeps what was typed.
       const words = e.args.trim().split(/\s+/).filter(Boolean)
@@ -763,7 +763,7 @@ export const register: Register = on => {
           await save($, cleared)
           await paint($, cleared, settings, 0)
 
-          return { text: 'Cleared the band. /pomo start when you are ready.' }
+          return { text: 'Cleared the band. /tamatem start when you are ready.' }
         }
         const stopped: Pomo = { next: pomo.next, cycle: pomo.cycle, tip: pomo.tip }
         await save($, stopped)
@@ -792,10 +792,10 @@ export const register: Register = on => {
 
       const guesses = closest(verb)
       if (guesses.length > 0) {
-        return { text: `Unknown: /pomo ${verb}. Did you mean ${guesses.join(' or ')}?` }
+        return { text: `Unknown: /tamatem ${verb}. Did you mean ${guesses.join(' or ')}?` }
       }
 
-      return { text: `Unknown: /pomo ${verb}\n\n${HELP}` }
+      return { text: `Unknown: /tamatem ${verb}\n\n${HELP}` }
     }),
   )
 
@@ -843,7 +843,7 @@ export const register: Register = on => {
             <Text dimColor>today </Text>
             <Text>{shown.today > 0 ? tomatoes(shown.today) : '–'}</Text>
             <Text dimColor>{'  ·  '}</Text>
-            <Text>{isDone ? '/pomo break' : '/pomo start'}</Text>
+            <Text>{isDone ? '/tamatem break' : '/tamatem start'}</Text>
             <Text dimColor>
               {isDone
                 ? ` for ${shown.breakMinutes} min${shown.tip ? `  ·  ${shown.tip}` : ''}`

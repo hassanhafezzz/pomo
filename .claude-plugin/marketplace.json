@@ -1,12 +1,12 @@
 {
-  "name": "pomo",
+  "name": "tamatem",
   "owner": { "name": "hassanhafezzz" },
-  "metadata": { "description": "Pomodoro focus blocks right above your Claude Code prompt: a quiet progress band, break ideas and daily stats, all from /pomo." },
+  "metadata": { "description": "Pomodoro focus blocks right above your Claude Code prompt: a quiet progress band, break ideas and daily stats, all from /tamatem." },
   "plugins": [
     {
-      "name": "pomo",
+      "name": "tamatem",
       "source": "./",
-      "description": "Pomodoro focus blocks right above your Claude Code prompt: a quiet progress band, break ideas and daily stats, all from /pomo."
+      "description": "Pomodoro focus blocks right above your Claude Code prompt: a quiet progress band, break ideas and daily stats, all from /tamatem."
     }
   ]
 }

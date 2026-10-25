@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
 const BAND = {
-  plugin: 'pomo',
+  plugin: 'tamatem',
   component: 'AbovePrompt',
   requestId: 'above-prompt',
   surface: 'terminal',
@@ -65,7 +65,7 @@ test('a finished block shows today\'s tomatoes and the next break idea', async (
   expect(drawn).toContain('● ● ● ●')
   expect(drawn).toContain('🔔 focus done')
   expect(drawn).toContain('🍅🍅🍅')
-  expect(drawn).toContain('/pomo break')
+  expect(drawn).toContain('/tamatem break')
   expect(drawn.some(t => t?.includes("for 15 min  ·  It's time for a short walk."))).toBe(true)
   await ui.unmount()
 })
@@ -136,7 +136,7 @@ test('a finished break says so and points to the next round', async ($, on) => {
   const drawn = await texts(ui)
 
   expect(drawn).toContain('🔔 break over')
-  expect(drawn).toContain('/pomo start')
+  expect(drawn).toContain('/tamatem start')
   expect(drawn).toContain(' for round 3')
   await ui.unmount()
 })
