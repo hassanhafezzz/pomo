@@ -15,6 +15,7 @@ type Pomo = {
   cycle: number // focus blocks done since the last long break, up to the rounds
   tip?: string // the idea the last focus toast gave for the coming break
   task?: string // what the focus block just done was for
+  lastTask?: string // the last focus block's task, kept through breaks for /tamatem continue
   endedAt?: number // when the last block ended; the band shows it that day
 }
 
@@ -77,6 +78,7 @@ const TIPS: Record<'short' | 'long', string[]> = {
 
 const HELP = [
   '/tamatem start [min] [task] start a focus block, named if you like',
+  '/tamatem continue [min]     another focus block on the last task',
   '/tamatem break [min]        start a break (long after every round)',
   '/tamatem pause              pause the current block, again to resume',
   '/tamatem resume             carry on a paused block',
@@ -96,7 +98,7 @@ const HELP = [
 
 // What the band draws, rewritten every tick. Change the tag when View's
 // fields change: it declines what an earlier version stored.
-const view = atom({ plugin: 'tamatem', key: 'view' } as const, null, { shape: 'view-5' })
+const view = atom({ plugin: 'tamatem', key: 'view' } as const, null, { shape: 'view-6' })
 
 // A hot reload cancels the old timer with the old module; session.start
 // runs again and starts a new one.
@@ -150,6 +152,9 @@ const load = async ($: Engine): Promise<Pomo> => {
   if (isTip(raw.tip)) pomo.tip = raw.tip
   const task = toTask(raw.task)
   if (task) pomo.task = task
+  // A store from before lastTask still knows the block just done.
+  const lastTask = toTask(raw.lastTask) ?? task
+  if (lastTask) pomo.lastTask = lastTask
   if (typeof raw.endedAt === 'number' && Number.isFinite(raw.endedAt)) pomo.endedAt = raw.endedAt
 
   const r = raw.running
@@ -388,6 +393,7 @@ const paint = async ($: Engine, pomo: Pomo, settings: Settings, now: number) => 
         if (pomo.task) shown.task = pomo.task
       } else {
         shown = { phase: 'over', cycle, rounds, today }
+        if (pomo.lastTask) shown.task = pomo.lastTask
       }
     }
   }
@@ -440,12 +446,17 @@ const finish = async ($: Engine, pomo: Pomo, isAway: boolean) => {
       ? { next: 'break', cycle, tip: pickTip(kind, pomo.running.tip ?? pomo.tip) }
       : { next: 'focus', cycle }
   if (phase === 'focus' && task) done.task = task
+  const lastTask = phase === 'focus' ? task : pomo.lastTask
+  if (lastTask) done.lastTask = lastTask
   done.endedAt = endsAt
   // Saved before the count, so the block ends even if the count can't be saved.
   await save($, done)
 
   const away = isAway ? ' while you were away' : ''
-  let message = `🔔 Break over${away} · /tamatem start for round ${Math.min(cycle + 1, settings.rounds)}`
+  const next = Math.min(cycle + 1, settings.rounds)
+  let message = lastTask
+    ? `🔔 Break over${away} · /tamatem continue on ${shorten(lastTask)} for round ${next}`
+    : `🔔 Break over${away} · /tamatem start for round ${next}`
   if (phase === 'focus') {
     const isCounted = await countBlock($, minutes, endsAt, task).then(
       () => true,
@@ -511,7 +522,11 @@ const begin = async ($: Engine, phase: Phase, minutes: number, task?: string) =>
         : pickTip(phase, pomo.tip)
   const running: Pomo['running'] = { phase, endsAt, minutes, tip }
   if (task) running.task = task
-  await save($, { next: pomo.next, cycle: pomo.cycle, running })
+  const started: Pomo = { next: pomo.next, cycle: pomo.cycle, running }
+  // A focus block becomes the last task, named or not; a break keeps it.
+  const lastTask = phase === 'focus' ? task : pomo.lastTask
+  if (lastTask) started.lastTask = lastTask
+  await save($, started)
   await startTicking($)
 
   return phase === 'focus'
@@ -552,6 +567,22 @@ const resume = async ($: Engine) => {
   return `▶ Resumed the ${LABEL[running.phase]}: ${clock(left)} left.`
 }
 
+// Another focus block on the last task. A focus already running is left
+// alone, and a paused one resumes: either way the work carries on.
+const carryOn = async ($: Engine, minutes: number) => {
+  const pomo = await load($)
+  const running = pomo.running
+  if (running?.phase === 'focus') {
+    if (running.pausedLeftMs !== undefined) return resume($)
+    const left = running.endsAt - (await $.clock.now())
+
+    return `Already on ${running.task ?? 'a focus block'}: ${clock(left)} left.`
+  }
+  if (!pomo.lastTask) return 'No task to continue. /tamatem start [min] [task] to name one.'
+
+  return begin($, 'focus', minutes, pomo.lastTask)
+}
+
 // Why the minutes asked for won't do, or undefined when they will.
 const badMinutes = (verb: string, arg: string, phase: Phase, fallback: number) => {
   const [min, max] = LIMITS[phase]
@@ -561,7 +592,7 @@ const badMinutes = (verb: string, arg: string, phase: Phase, fallback: number) =
   return `A ${LABEL[phase]} takes whole minutes from ${min} to ${max}, e.g. /tamatem ${verb} ${fallback}`
 }
 
-const VERBS = ['start', 'break', 'pause', 'resume', 'stop', 'stats', 'history', 'set', 'sound', 'toast', 'status', 'help']
+const VERBS = ['start', 'continue', 'break', 'pause', 'resume', 'stop', 'stats', 'history', 'set', 'sound', 'toast', 'status', 'help']
 
 // Edits between two words: insert, delete or change a letter, or swap two
 // side by side, so "strat" is one edit from start.
@@ -634,7 +665,9 @@ const describe = async ($: Engine) => {
   const where =
     pomo.next === 'break'
       ? `Focus block done${pomo.task ? `: ${pomo.task}` : ''} (${done}/${settings.rounds}). /tamatem break for a ${kind} break.`
-      : 'No timer running. /tamatem start [min] [task] to begin.'
+      : pomo.lastTask
+        ? `No timer running. /tamatem continue on ${pomo.lastTask}, or /tamatem start [min] [task].`
+        : 'No timer running. /tamatem start [min] [task] to begin.'
 
   return `${where}\n\n${stats}\n\n/tamatem help for every command.`
 }
@@ -705,8 +738,8 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'tamatem',
-      description: 'Pomodoro timer: start, break, pause, resume, stop, stats, set, sound, toast, help',
-      argumentHint: '[start [min] [task]|break|pause|resume|stop|stats|set|sound|toast|help]',
+      description: 'Pomodoro timer: start, continue, break, pause, resume, stop, stats, set, sound, toast, help',
+      argumentHint: '[start [min] [task]|continue [min]|break|pause|resume|stop|stats|set|sound|toast|help]',
       immediate: true,
     })
 
@@ -741,6 +774,14 @@ export const register: Register = on => {
         return { text: await begin($, 'focus', hasMinutes ? Number(arg) : settings.focus, task) }
       }
 
+      if (verb === 'continue') {
+        const settings = await loadSettings($)
+        const why = arg === undefined ? undefined : badMinutes(verb, arg, 'focus', settings.focus)
+        if (why) return { text: why }
+
+        return { text: await carryOn($, arg === undefined ? settings.focus : Number(arg)) }
+      }
+
       if (verb === 'break') {
         const [pomo, settings] = await Promise.all([load($), loadSettings($)])
         const phase = pomo.cycle >= settings.rounds ? 'long' : 'short'
@@ -766,6 +807,7 @@ export const register: Register = on => {
           return { text: 'Cleared the band. /tamatem start when you are ready.' }
         }
         const stopped: Pomo = { next: pomo.next, cycle: pomo.cycle, tip: pomo.tip }
+        if (pomo.lastTask) stopped.lastTask = pomo.lastTask
         await save($, stopped)
         ticker?.cancel()
         ticker = undefined
@@ -843,11 +885,11 @@ export const register: Register = on => {
             <Text dimColor>today </Text>
             <Text>{shown.today > 0 ? tomatoes(shown.today) : '–'}</Text>
             <Text dimColor>{'  ·  '}</Text>
-            <Text>{isDone ? '/tamatem break' : '/tamatem start'}</Text>
+            <Text>{isDone ? '/tamatem break' : shown.task ? '/tamatem continue' : '/tamatem start'}</Text>
             <Text dimColor>
               {isDone
                 ? ` for ${shown.breakMinutes} min${shown.tip ? `  ·  ${shown.tip}` : ''}`
-                : ` for round ${round}`}
+                : `${shown.task ? ` on ${shorten(shown.task)}` : ''} for round ${round}`}
             </Text>
           </Text>
         </Box>,

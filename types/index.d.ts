@@ -5,7 +5,7 @@ export type PomoPhase = 'focus' | 'short' | 'long'
 export type View =
   | { phase: PomoPhase; leftMs: number; totalMs: number; cycle: number; rounds: number; tip?: string; isPaused?: boolean; task?: string }
   | { phase: 'done'; cycle: number; rounds: number; tip?: string; breakMinutes: number; today: number; task?: string }
-  | { phase: 'over'; cycle: number; rounds: number; today: number }
+  | { phase: 'over'; cycle: number; rounds: number; today: number; task?: string }
 
 declare module 'claude-code' {
   interface PluginState {

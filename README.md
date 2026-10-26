@@ -32,6 +32,16 @@ claude plugin install tamatem --marketplace hassanhafezzz/tamatem
 
 In the desktop app, where `/plugin` does not run: click **+** next to the prompt box, then **Plugins**, **Add marketplace** with `hassanhafezzz/tamatem`, then **Add plugin**.
 
+### Updating
+
+Claude Code doesn't update plugins from your own marketplaces on its own. To get new versions as they're released, turn on auto-update once: run `/plugin`, open **Marketplaces**, pick **tamatem**, then **Enable auto-update**. Run `/reload-plugins` when it tells you an update is in.
+
+Or update by hand from a shell:
+
+```
+claude plugin update tamatem@tamatem
+```
+
 ## What it looks like
 
 A focus block, halfway through. The round dots show it's the second of four:
@@ -68,12 +78,12 @@ On a break, with the idea underneath:
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
-The break is over, and the next round is waiting:
+The break is over, and the next round on the same task is waiting:
 
 ```
 ╭──────────────────────────────────────────────────────────────────────────────╮
 │ 🔔 break over   ████████████████████████████████████████████  ● ● ○ ○        │
-│ today 🍅🍅🍅  ·  /tamatem start for round 3                                  │
+│ today 🍅🍅🍅  ·  /tamatem continue on fix login bug for round 3              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 ```
 
@@ -123,6 +133,7 @@ All time:   212 🍅 · 88h 20m focused
 /tamatem start                    a 25-minute focus block
 /tamatem start fix login bug      the same, named for what you're doing
 /tamatem start 50 write the docs  50 minutes, named
+/tamatem continue                 another focus block on the last task (minutes too: /tamatem continue 50)
 /tamatem break                    a break: short, or long after every 4th round
 /tamatem pause                    pause the block; again (or /tamatem resume) to carry on
 /tamatem stop                     stop the block, or clear the band once it's done
@@ -138,7 +149,7 @@ A first word that's a number is the minutes; the rest names the task.
 | `🧠 focus` or `🧠 <task>` | a focus block is running |
 | `☕ short break`, `🛌 long break` | a break is running, with an idea for it underneath |
 | `⏸` | the block is paused |
-| `🔔 … done`, `🔔 break over` | a block just ended, with the next command to run |
+| `🔔 … done`, `🔔 break over` | a block just ended, with the next command to run (`/tamatem continue` after a break on a named task) |
 | `● ◐ ○ ○` | rounds: ● a focus block done, ◐ the one running, ○ one to come. When all are ●, the long break is due |
 
 The band shows in the terminal and in the desktop app. Claude Code doesn't offer that space in VS Code or on mobile, so there you'll get the toast and `/tamatem`.
