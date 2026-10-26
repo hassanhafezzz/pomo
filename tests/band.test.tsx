@@ -17,7 +17,7 @@ const BAND = {
 
 // The band reads a shaped value: seed it under the tag the mod writes.
 const holding = (value: unknown) => () => ({
-  value: { value: { shape: 'view-5', value }, version: 1 },
+  value: { value: { shape: 'view-6', value }, version: 1 },
 })
 
 // The engine beneath, drawing nothing of its own there.
@@ -138,6 +138,17 @@ test('a finished break says so and points to the next round', async ($, on) => {
   expect(drawn).toContain('🔔 break over')
   expect(drawn).toContain('/tamatem start')
   expect(drawn).toContain(' for round 3')
+  await ui.unmount()
+})
+
+test('a finished break points to continue when there is a last task', async ($, on) => {
+  on('state.get', holding({ phase: 'over', cycle: 2, rounds: 4, today: 2, task: 'Fix login' }))
+  nothingBelow(on)
+  const ui = await $.ui.mount(BAND)
+  const drawn = await texts(ui)
+
+  expect(drawn).toContain('/tamatem continue')
+  expect(drawn).toContain(' on Fix login for round 3')
   await ui.unmount()
 })
 

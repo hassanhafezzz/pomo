@@ -339,3 +339,50 @@ test('starting over a running block says it stopped it', async ($, on) => {
 
   expect((await run($, 'start 10 docs')).text).toBe('Stopped the focus. 🧠 focus started: 10 min · docs')
 })
+
+test('continue starts another focus block on the last task, through a break', async ($, on) => {
+  const stored: Record<string, unknown> = {}
+  const toasts: string[] = []
+  const views = engine(on, stored, toasts)
+
+  expect((await run($, 'continue')).text).toBe('No task to continue. /tamatem start [min] [task] to name one.')
+
+  await run($, 'start Fix login')
+  stored.timer = { ...(stored.timer as object), running: { phase: 'focus', endsAt: NOW - 1, minutes: 25, task: 'Fix login' } }
+  await start($)
+  expect((await run($, 'break')).text).toContain('☕ short break started: 5 min.')
+  stored.timer = { ...(stored.timer as object), running: { phase: 'short', endsAt: NOW - 1, minutes: 5 } }
+  await start($)
+
+  expect(toasts.at(-1)).toBe('🔔 Break over while you were away · /tamatem continue on Fix login for round 2')
+  expect(views.at(-1)).toEqual({ phase: 'over', cycle: 1, rounds: 4, today: 1, task: 'Fix login' })
+  expect((await run($, '')).text).toContain('No timer running. /tamatem continue on Fix login, or /tamatem start [min] [task].')
+
+  expect((await run($, 'continue 40')).text).toBe('🧠 focus started: 40 min · Fix login')
+  expect((stored.timer as Running).running).toMatchObject({ minutes: 40, task: 'Fix login' })
+})
+
+test('continue leaves a running focus alone, and resumes a paused one', async ($, on) => {
+  const stored: Record<string, unknown> = {
+    timer: { next: 'focus', cycle: 0, lastTask: 'Docs', running: { phase: 'focus', endsAt: NOW + 600_000, minutes: 25, task: 'Docs' } },
+  }
+  engine(on, stored)
+
+  expect((await run($, 'continue')).text).toBe('Already on Docs: 10:00 left.')
+  await run($, 'pause')
+  expect((await run($, 'continue')).text).toBe('▶ Resumed the focus: 10:00 left.')
+  expect((await run($, 'continue 0')).text).toContain('whole minutes from 1 to 180')
+  expect((await run($, 'contnue')).text).toBe('Unknown: /tamatem contnue. Did you mean /tamatem continue?')
+})
+
+test('stopping a block keeps the last task, and an unnamed focus clears it', async ($, on) => {
+  const stored: Record<string, unknown> = {}
+  engine(on, stored)
+
+  await run($, 'start Docs')
+  await run($, 'stop')
+  expect((await run($, 'continue')).text).toBe('🧠 focus started: 25 min · Docs')
+  await run($, 'start')
+  expect((await run($, 'stop')).text).toBe('Stopped the focus.')
+  expect((await run($, 'continue')).text).toBe('No task to continue. /tamatem start [min] [task] to name one.')
+})
